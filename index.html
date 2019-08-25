@@ -35,6 +35,7 @@
     <canvas id="canvasOutput" autoplay="true" width="300" height="225"></canvas>
 
     <script async src="js/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+    <script src="js/utils.js"></script>
     <script type="text/javascript">
       let streaming = false;
       navigator.mediaDevices
@@ -58,7 +59,23 @@
         let video = document.getElementById('videoInput');
         let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
         let dst = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+        // let cap = new cv.VideoCapture(video);
+        let gray = new cv.Mat();
         let cap = new cv.VideoCapture(video);
+        let faces = new cv.RectVector();
+        let classifier = new cv.CascadeClassifier(); // initialize classifier
+
+        // Note: Grab classifiers from github repo: https://github.com/opencv/opencv/tree/master/data/haarcascades
+        let faceCascadeFile = 'haarcascade_frontalface_default.xml'; // path to xml
+        // let faceCascadeFile = 'classifiers/haarcascade_frontalface_alt2.xml'; // path to xml
+        // let faceCascadeFile = 'classifiers/haarcascade_eye_tree_eyeglasses.xml'; // path to xml
+
+        // use createFileFromUrl to "pre-build" the xml
+        createFileFromUrl(faceCascadeFile, faceCascadeFile, () => {
+          console.log('classifier loaded');
+          classifier.load(faceCascadeFile); // in the callback, load the cascade from file
+          setTimeout(processVideo, 0);
+        });
 
         const FPS = 30;
         function processVideo() {
@@ -67,12 +84,26 @@
               // clean and stop.
               src.delete();
               dst.delete();
+              gray.delete();
+              faces.delete();
+              classifier.delete();
               return;
             }
             let begin = Date.now();
             // start processing.
             cap.read(src);
-            cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+            src.copyTo(dst);
+            cv.cvtColor(dst, gray, cv.COLOR_RGBA2GRAY, 0);
+            // detect faces.
+            classifier.detectMultiScale(gray, faces, 1.1, 3, 0);
+
+            // draw faces.
+            for (let i = 0; i < faces.size(); ++i) {
+              let face = faces.get(i);
+              let point1 = new cv.Point(face.x, face.y);
+              let point2 = new cv.Point(face.x + face.width, face.y + face.height);
+              cv.rectangle(dst, point1, point2, [255, 0, 0, 255]);
+            }
             cv.imshow('canvasOutput', dst);
             // schedule the next one.
             let delay = 1000 / FPS - (Date.now() - begin);
@@ -84,7 +115,7 @@
         }
 
         // schedule the first one.
-        setTimeout(processVideo, 0);
+        // setTimeout(processVideo, 0);
       }
     </script>
   </body>
