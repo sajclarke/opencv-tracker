@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <title>OpenCV test</title>
+    <style>
+      #canvasOutput {
+        border: 1px solid black;
+      }
+      /* display loading gif and hide webpage */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.8) url('http://i.stack.imgur.com/FhHRx.gif') 50% 50% no-repeat;
+      }
+
+      /* prevent scrollbar from display during load */
+      body.loading {
+        overflow: hidden;
+      }
+
+      /* display the modal when loading class is added to body */
+      body.loading .modal {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="modal"></div>
+
+    <video id="videoInput" autoplay="true" play width="300" height="225"></video> <br />
+    <canvas id="canvasOutput" autoplay="true" width="300" height="225"></canvas>
+
+    <script async src="js/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+    <script type="text/javascript">
+      navigator.mediaDevices
+        .getUserMedia({
+          video: true,
+          audio: false
+        })
+        .then(function(stream) {
+          videoInput.srcObject = stream;
+          videoInput.play();
+        })
+        .catch(function(err) {
+          console.log('An error occured While accessing media! ' + err);
+        });
+
+      function onOpenCvReady() {
+        document.body.classList.remove('loading');
+        console.log('page loaded');
+      }
+    </script>
+  </body>
+</html>
